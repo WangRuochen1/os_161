@@ -1,0 +1,67 @@
+#problem 1
+The thread will detach from our process when it exit.
+It will disable all interrupt and change thread state
+to S_ZOMBIE
+
+When the thread sleep its state will be S_SLEEP. The thread will
+be added to wait channel. Spinlock will be released.
+
+#problem 2
+thread_switch()
+it is in ~/os161/src/kern/thread/thread.c
+switchframe_switch()
+it is in ~/os161/src/kern/arch/mips/thread/switch.S
+
+#problem 3
+it means the thread will do different things as they
+in different states. 
+If it's in S_RUN it means it is running now
+If it's in S_READY means it's runnable now
+If it's in S_SLEEP means it will not run on CPU
+and lock the Spinlock
+If it's S_ZOMBIE, the thread exit
+
+#problem 4
+It means cpu will not deal with interrupt at the moment
+
+It is implemented by call splhigh()
+
+Because if we turn interrupt on, the interrupt will return without doing 
+anything. So that we cannot do the context switch.
+
+#problem 5
+it will grab a thread from the wait channel when it is awake
+
+the sleep thread will be removed from waiting channel by threadlist_remhead()
+and on thread_switch() it will be add to c_runqueue of target cpu
+
+#problem 6
+
+thread_switch()
+
+
+#problem 7
+
+They remove a thread form runqueue's head if there is no thread in the queue
+we release the spinlock idle for a while, then acquire lock and check if there
+is a thread at the runqueue's head again.
+
+#problem 8
+
+hardware timer will send call thread_consider_migration() 
+and schedule()  when we satisfy certain condition
+
+it will call the machine-independent function thread_yield()
+ 
+#problem 9
+call wchan_sleep in function P ~/os161/src/kern/thread/synch.c
+will reduce the sem_count by 1
+call wchan_wakeone in function V ~/os161/src/kern/thread/synch.c
+will increase the sem_count by 1
+
+#problem 10
+we put the thread in the wait channel and unlock at the same time. We keep the wchan's
+associated spinlock locked from the point the caller of wchan_sleep locked it until the 
+thread is on the list
+
+

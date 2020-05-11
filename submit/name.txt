@@ -1,0 +1,8 @@
+asst4
+47717046 Ruochen Wang
+90653528 Meiqi   Guo
+
+asst5
+47717046 Ruochen Wang
+I informed professor that my partner and I wish to drop partnership and work alone for asst 5 and 6
+Professor says that since I work alone for this lab, I only need to finish fork/exit/waitpid

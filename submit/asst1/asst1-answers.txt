@@ -1,0 +1,259 @@
+sys161: System/161 release 2.0.3, compiled Aug 10 2015 13:31:07
+
+OS/161 base system version 1.99.08
+Copyright (c) 2000, 2001-2005, 2008-2011, 2013, 2014
+   President and Fellows of Harvard College.  All rights reserved.
+
+Put-your-group-name-here's system version 0 (DUMBVM #1)
+
+292k physical memory available
+Device probe...
+lamebus0 (system main bus)
+emu0 at lamebus0
+ltrace0 at lamebus0
+ltimer0 at lamebus0
+beep0 at ltimer0
+rtclock0 at ltimer0
+lrandom0 at lamebus0
+random0 at lrandom0
+lhd0 at lamebus0
+lhd1 at lamebus0
+lser0 at lamebus0
+con0 at lser0
+
+cpu0: MIPS/161 (System/161 2.x) features 0x0
+OS/161 kernel [? for menu]:
+
+
+commit 14fa051d8326270f1584ff9e7c11c443df43c87e
+Author: Ruochen Wang <wrc1999@ssh-linux1.ece.ubc.ca>
+Date:   Fri Sep 6 10:31:29 2019 -0700
+
+    Initial commit of os161 for CPEN331
+
+# problem1
+The very first entry point code when trap occurs is in file 
+~/os161/src/kern/arch/mips/locore/exception-mips1.S 
+line  67 for UTLB exception line 87 for common exception
+
+They will call function "mips_trap" in file at line 260
+~/os161/src/kern/arch/mips/locore/trap.c  this function is the
+General trap (exception) handling function for mips.
+
+In this function, it handles different types of traps. Interrupt
+(EX_IRQ),System call (EX_SYS),vm_fault,and Panic.
+
+For System call will transfer to
+  ~/os161/src/kern/arch/mips/syscall/syscall.c
+
+For vm fault will transfer to
+~/os161/src/kern/arch/mips/vm/dumbvm.c
+
+Interrupt calls the function mainbus_intterrupt() in file
+~/os161/src/kern/arch/sys161/dev/lamebus_machdep.c
+
+difference:
+Interrupt is classified into three types by cause: all system bus
+slot,inter-processor interrupt, and on-chip timer. 
+all system bus slot interrupt use lamebus_interrupt()
+in ~/os161/src/kern/dev/lamebus/lamebus.c
+inter-processor interrupt use interprocessor_interrupt();
+in ~/os161/src/kern/thread/thread.c
+on-chip timer interrupt use hardclock();
+in ~/os161/src/kern/thread/clock.c
+
+#problem 2
+system call 
+I find the system call in file
+ userland/lib/libc/arch/mips/syscalls-mips.S
+in line 84 syscall              /* make system call */
+
+#problem 3
+Because Kernel needs to run depend on these functions
+in C library
+
+#problem 4
+name two things:(in configure line 20-21)
+PLATFORM
+MACHINE
+If we do not run from the right place(we should run it from
+the top of the OS/161 tree),we may need to rerun it
+
+#problem 5
+details make function "machine-dependent":
+it will depend on certain feature of architecture. For example 
+in file ~/os161/src/kern/arch/mips/include/vm.h there are machine
+-dependent VM system definition. It defines the size of vm page with
+mips. 
+For mips there are some instructions that is different from other
+architecture like x86,arm,sparc...(~/os161/src/kern/arch/mips/include/membar.h)
+Registers we need to use is different from hardware to hardware.
+So machine dependce code in OS161 all use mips' register and 
+instructions.
+
+
+why keep separation:
+Because it is better for programmer to do code maintenance.
+
+#problem 6
+The definition is in ~/os161/src/kern/arch/mips/include/trapframe.h
+trapframe is a structure with unit32_t type data.
+unit32_t = 32bits = 4 bytes. There are 37 piece of data in this
+structure so the total size is 4 * 37 = 148 bytes.
+
+#problem 7
+The file needs to be re-run if you change the configuration.
+Because this file is used to first check the configuration 
+and then set up compile direcotry, makefile.....
+
+#problem 8
+bmake depend can update the header file depend, so when you run
+bmake depend you probably want to update the depend(like #include
+) information in you c file
+
+#problem 9
+you can type bmake or bmake install if you want to compile certain
+file in kernel.
+
+#problem 10
+
+/*
+ * Command for print hello world.
+ */
+static
+int
+cmd_hello(int nargs, char **args)
+{
+	(void)nargs;
+	(void)args;
+
+	kprintf("Hello World !");
+
+	return 0;
+}
+
+static const char *opsmenu[] = {
+	"[HW]      Hello World       ",
+	NULL
+};
+
+// Command table.
+static struct {
+	const char *name;
+	int (*func)(int nargs, char **args);
+} cmdtable[] = {
+	/* menus */
+	{ "HW",	cmd_hello},
+};
+They are all in file ~/os161/src/kern/main/menu.c
+
+#problem 11
+
+Why need to include:
+Because these code is for running OS161 kernel on mips.
+Why not use standard utility on my machine:
+Because the architecture of my machine may not be the same
+as mips, and the standard utilities may be different for these
+architectures.
+
+
+#problem 12
+
+In file ~/os161/src/userland/crt0/mips/crt0.S
+at the end of the code when we have the return value of main
+in v0, move it to s0,so we still have it in case exit() returns,
+also move it to a0 so it is the argument to exit.
+If exit() does not work we jump and loop  back again.
+
+#problem 13
+
+~/os161/src/kern/arch/mips/syscall/syscall.c(add system call in the case statement)
+~/os161/src/build/userland/lib/libc/syscalls.S
+ ~/os161/src/kern/include/syscall.h (add system call number)
+~/os161/kern/include/syscall.h(add system call prototype)
+
+first run the kern/conf/config script because you change the code
+then run bmake depend if you want to update your
+ dependent(header file)
+then run bmake or bmake install to compile your code  
+
+#problem 14
+
+The very first function we execute when os 161 start up is 
+__start () at ../../arch/sys161/main/start.S
+
+#problem 15 
+
+the very first assembly instruction is at
+__start () at ../../arch/sys161/main/start.S
+54	   addiu sp, sp, -24
+
+#problem 16
+
+Num     Type           Disp Enb Address    What
+1       breakpoint     keep y   0x800139e4 in kmain at ../../main/main.c:211
+	breakpoint already hit 1 time
+2       breakpoint     keep y   0x800143a0 in showmenu at ../../main/menu.c:415
+
+#problem 17
+
+set up stack frame, then make a boot stack to store memory address
+copy exception handler to memory. Also we set up status registers.
+We set up everything we need to boot our system
+
+#problem 18
+ jal kmain
+
+#problem 19
+Step through boot() I find out for initialize it run the following functions
+(gdb) n
+109		ram_bootstrap();
+(gdb) n
+110		proc_bootstrap();
+(gdb) n
+111		thread_bootstrap();
+(gdb) n
+112		hardclock_bootstrap();
+(gdb) n
+113		vfs_bootstrap();
+(gdb) n
+114		kheap_nextgeneration();
+(gdb) n
+117		kprintf("Device probe...\n");
+(gdb) n
+118		KASSERT(curthread->t_curspl > 0);
+(gdb) n
+119		mainbus_bootstrap();
+(gdb) n
+120		KASSERT(curthread->t_curspl == 0);
+(gdb) n
+122		pseudoconfig();
+(gdb) n
+123		kprintf("\n");
+(gdb) n
+124		kheap_nextgeneration();
+(gdb) n
+127		vm_bootstrap();
+(gdb) n
+128		kprintf_bootstrap();
+(gdb) n
+129		thread_start_cpus();
+(gdb) n
+132		vfs_setbootfs("emu0");
+(gdb) n
+134		kheap_nextgeneration();
+
+#problem 20
+$1 = (struct cpu *) 0x80000
+
+#problem 21
+
+$2 = (struct cpu *) 0x8003af00
+
+#problem 22
+$1 = {arr = {v = 0x0, num = 0, max = 0}}
+
+#problem 23
+$2 = {arr = {v = 0x80039fe0, num = 1, max = 4}}
+
+

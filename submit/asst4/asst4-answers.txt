@@ -1,0 +1,97 @@
+Problem 1 
+What are the ELF magic numbers?
+ELF magic number is used to check if our processor type is correct
+In os161 we need a 32-bit ELF-version-1 executable
+line 182 ~/os161/src/kern/syscall/loadelf.c
+
+
+Problem 2:
+What is the difference between UIO_USERISPACE and UIO_USERSPACE?
+When should one use UIO_SYSSPACE instead?
+
+UIO_USERISPACE represent for User process code
+UIO_USERSPACE  represent for User process data
+In uio.c when the code we need to move is in kernel we need to set the uio_segflag to UIO_SYSSPACE
+~/os161/src/kern/lib/uio.c
+
+Problem 3
+Why can the struct uio that is used to read in a segment
+be allocated on the stack in load_segment() (i.e., where does the memory read actually go)?
+
+Because we will transfer the segment into the virtual memory space, which do not require uio struct
+to stay long on stack to hold our segment information.
+
+The memory read goes from vnode which is the file to uio  
+since we call VOP_READ
+~/os161/src/kern/syscall/loadelf line 106 
+
+Problem 4
+In runprogram(), why is it important to call vfs_close() before going to usermode?
+In runprogram() we open the file in line 63
+If we don't close it, other process might not be able
+to read or write to this file.
+
+Problem 5
+What function forces the processor to switch into usermode? Is this function machine dependent?
+The function called asm_usermode(tf) actually switch into user mode.
+The function is assembly so it is machine dependent.
+~/os161/src/kern/arch/mips/locore/trap.c line 403
+
+Problem 6
+In what file are copyin and copyout defined? memmove? Why can't copyin and copyout be implemented as simply as memmove?
+Copyin(), copyout(): kern/vm/copyinout.c
+memmove():common/libc/string/memmove.c
+Copying and copyout are functions used to copy block of data from user lever to kernel.
+User level pointer cannot point to kernel space, copying and copyout can make sure this.
+However, memmove cannot do this so it just used for memory move in kernel level
+
+Problem 7
+What (briefly) is the purpose of userptr_t?
+It indicate the base address in user level
+
+Problem 8
+What is the numerical value of the exception code for a MIPS system call?
+In os161/src/kern/arch/mips/include/trapframe.h
+The number is 8 Line 91
+
+Problem 9
+How many bytes is an instruction in MIPS? (Answer this by reading syscall() carefully, not by looking somewhere else.)
+the instruction is 4 bytes because in line 141 we increase the PC by 4 which means the instruction takes 4 bytes.
+
+Problem 10
+Why do you "probably want to change" the implementation of kill_curthread()?
+Because in line 117 we have panic function which will make the kernel become crashing.
+We don't want to see this kind of things happens when we try to kill current thread.
+
+Problem 11
+What would be required to implement a system call that took more than 4 arguments?
+We should fetch argument from user level stack, it indicate in comment of syscall()
+os161/src/kern/arch/mips/syscall/syscall.c
+
+Problem 12
+What is the purpose of the SYSCALL macro?
+It is defined for all system call. We need to load the syscall number into v0, and jump to the shared syscall code.
+
+Problem 13
+What is the MIPS instruction that actually triggers a system call? (Answer this by reading the source in this directory, not looking somewhere else.)
+The instruction is syscall
+In line 84 of os161/src/userland/lib/libc/arch/mips/syscalls.S
+
+Problem 14
+After reading syscalls-mips.S and syscall.c, you should be prepared to answer the following question: OS/161 supports 64-bit values; lseek() takes and returns a 64-bit offset value. Thus, lseek() takes a 32-bit file handle (arg0), a 64-bit offset (arg1), a 32-bit whence (arg2), and needs to return a 64-bit offset value. In void syscall(struct trapframe *tf) where will you find each of the three arguments (in which registers) and how will you return the 64-bit offset?
+arg0 will be in register a0
+arg1 will be in register a2 and a3
+arg2 will be in sp+16
+Return value is in v0 and v1
+
+Problem 15
+As you were reading the code in runprogram.c and loadelf.c, you probably noticed how the kernel manipulates the files. Which kernel function is called to open a file? Which macro is called to read the file? What about to write a file? Which data structure is used in the kernel to represent an open file? 
+To open file we use vfs_open()
+To read file we use VOP_READ()
+To write we use 
+We use uio to represent open file
+
+Problem 16
+What is the purpose of VOP_INCREF and VOP_DECREF?
+They will help us to track how may process are using this file
+
